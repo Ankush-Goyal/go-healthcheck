@@ -1,6 +1,9 @@
 package registry
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/Ankush-Goyal/go-healthcheck/pkg/checks"
@@ -14,13 +17,16 @@ type Registry struct {
 	registeredChecks map[string]checks.Checker
 }
 
+var reg *Registry
+
 // NewRegistry creates a new registry. This isn't necessary for normal use of
 // the package, but may be useful for unit tests so individual tests have their
 // own set of checks.
 func NewRegistry() *Registry {
-	return &Registry{
+	reg = &Registry{
 		registeredChecks: make(map[string]checks.Checker),
 	}
+	return reg
 }
 
 // Register associates the checker with the provided name.
@@ -53,4 +59,39 @@ func (registry *Registry) CheckStatus() map[string]string {
 	}
 
 	return statusKeys
+}
+
+// StatusHandler returns a JSON blob with all the currently registered Health Checks
+// and their corresponding status.
+// Returns 503 if any Error status exists, 200 otherwise
+func StatusHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		statuses := reg.CheckStatus()
+		status := http.StatusOK
+
+		// If there is an error, return 503
+		if len(statuses) != 0 {
+			status = http.StatusServiceUnavailable
+		}
+
+		statusResponse(w, status, statuses)
+	} else {
+		http.NotFound(w, r)
+	}
+}
+
+// statusResponse completes the request with a response describing the health
+// of the service.
+func statusResponse(w http.ResponseWriter, status int, checks map[string]string) {
+	p, _ := json.Marshal(checks)
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Length", fmt.Sprint(len(p)))
+	w.WriteHeader(status)
+	w.Write(p)
+}
+
+func init() {
+	reg = NewRegistry()
+	http.HandleFunc("/debug/health", StatusHandler)
 }
