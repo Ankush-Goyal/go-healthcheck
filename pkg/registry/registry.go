@@ -65,8 +65,6 @@ func (registry *Registry) CheckStatus() map[string]string {
 // and their corresponding status.
 // Returns 503 if any Error status exists, 200 otherwise
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
-	var test_data = 0
-	fmt.Println(test_data)
 	if r.Method == "GET" {
 		statuses := reg.CheckStatus()
 		status := http.StatusOK
