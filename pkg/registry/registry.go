@@ -30,34 +30,33 @@ func NewRegistry() *Registry {
 }
 
 // Register associates the checker with the provided name.
-func (registry *Registry) Register(name string, check checks.Checker) {
-	registry.mu.Lock()
-	defer registry.mu.Unlock()
-	_, ok := registry.registeredChecks[name]
+func Register(name string, check checks.Checker) {
+	reg.mu.Lock()
+	defer reg.mu.Unlock()
+	_, ok := reg.registeredChecks[name]
 	if ok {
 		panic("Check already exists: " + name)
 	}
-	registry.registeredChecks[name] = check
+	reg.registeredChecks[name] = check
 }
 
 // RegisterFunc allows the convenience of registering a checker directly from
 // an arbitrary func() error.
-func (registry *Registry) RegisterFunc(name string, check func() error) {
-	registry.Register(name, checks.CheckFunc(check))
+func RegisterFunc(name string, check func() error) {
+	Register(name, checks.CheckFunc(check))
 }
 
 // CheckStatus returns a map with all the current health check errors
-func (registry *Registry) CheckStatus() map[string]string {
-	registry.mu.RLock()
-	defer registry.mu.RUnlock()
+func CheckStatus() map[string]string {
+	reg.mu.RLock()
+	defer reg.mu.RUnlock()
 	statusKeys := make(map[string]string)
-	for k, v := range registry.registeredChecks {
+	for k, v := range reg.registeredChecks {
 		err := v.Check()
 		if err != nil {
 			statusKeys[k] = err.Error()
 		}
 	}
-
 	return statusKeys
 }
 
@@ -66,7 +65,7 @@ func (registry *Registry) CheckStatus() map[string]string {
 // Returns 503 if any Error status exists, 200 otherwise
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		statuses := reg.CheckStatus()
+		statuses := CheckStatus()
 		status := http.StatusOK
 
 		// If there is an error, return 503

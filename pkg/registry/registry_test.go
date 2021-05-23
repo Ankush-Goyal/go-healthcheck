@@ -15,7 +15,7 @@ func TestNewRegistry(t *testing.T) {
 		t.Run("RegisterFunc", func(t *testing.T) {
 			t.Run("Success", func(t *testing.T) {
 				key := "test_func_key"
-				registry.RegisterFunc(key, func() error {
+				RegisterFunc(key, func() error {
 					return nil
 				})
 				_, ok := registry.registeredChecks[key]
@@ -27,7 +27,7 @@ func TestNewRegistry(t *testing.T) {
 		t.Run("Register", func(t *testing.T) {
 			t.Run("Success", func(t *testing.T) {
 				key := "test_key"
-				registry.RegisterFunc(key, func() error {
+				RegisterFunc(key, func() error {
 					return nil
 				})
 				_, ok := registry.registeredChecks[key]
@@ -37,7 +37,7 @@ func TestNewRegistry(t *testing.T) {
 			})
 		})
 		t.Run("CheckStatus", func(t *testing.T) {
-			status := registry.CheckStatus()
+			status := CheckStatus()
 			if len(status) != 0 {
 				t.Error("Status returned error")
 			}
